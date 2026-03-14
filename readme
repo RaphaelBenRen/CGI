@@ -1,0 +1,91 @@
+# Plateforme CGI - Modification de CV
+
+Plateforme web permettant aux consultants CGI de mettre à jour leur CV automatiquement grâce à l'IA.
+
+---
+
+## Stack technique
+
+- **Frontend** : React + Vite + Tailwind CSS (port 5173)
+- **Backend** : Node.js + Express (port 3001)
+- **Base de données** : Supabase (PostgreSQL)
+- **Stockage** : Supabase Storage (buckets)
+- **IA** : OpenAI GPT-4o
+- **PDF** : Puppeteer
+
+---
+
+## Structure du projet
+
+```
+Plateforme CGI/
+├── frontend/         React app (Vite + Tailwind)
+├── backend/          API Express
+└── supabase/
+    └── schema.sql    Schéma SQL à exécuter dans Supabase
+```
+
+---
+
+## Installation et démarrage
+
+### 1. Configurer Supabase
+
+1. Aller sur https://supabase.com et ouvrir votre projet
+2. Aller dans **SQL Editor**
+3. Copier-coller le contenu de `supabase/schema.sql` et exécuter
+
+### 2. Démarrer le backend
+
+```bash
+cd backend
+npm install
+npm run dev
+```
+
+Le serveur démarre sur http://localhost:3001
+
+### 3. Démarrer le frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+L'app est disponible sur http://localhost:5173
+
+---
+
+## Fonctionnalités
+
+1. **Authentification** — Inscription / connexion par email + mot de passe
+2. **Upload** — CV (PDF ou Word) + fiche de compétences optionnelle
+3. **Poste cible** — Saisie d'un intitulé de poste pour personnaliser les propositions
+4. **Génération IA** — 3 versions de CV générées par GPT-4o :
+   - Version technique (accent compétences)
+   - Version expériences (accent missions)
+   - Version équilibrée
+5. **Édition manuelle** — Modification de chaque section du CV
+6. **Export PDF** — Téléchargement au format PDF (template CGI)
+7. **Historique** — Retrouvez tous vos CV générés
+
+---
+
+## Variables d'environnement
+
+### backend/.env
+```
+PORT=3001
+SUPABASE_URL=...
+SUPABASE_ANON_KEY=...
+SUPABASE_SERVICE_ROLE_KEY=...
+OPENAI_API_KEY=...
+```
+
+### frontend/.env
+```
+VITE_SUPABASE_URL=...
+VITE_SUPABASE_ANON_KEY=...
+VITE_API_URL=http://localhost:3001
+```
