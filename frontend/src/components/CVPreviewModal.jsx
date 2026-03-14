@@ -14,26 +14,26 @@ export default function CVPreviewModal({ version, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+      style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,.6)', padding: 16 }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col">
+      <div style={{ position: 'relative', background: '#fff', width: '100%', maxWidth: 900, maxHeight: '92vh', display: 'flex', flexDirection: 'column', border: '1px solid #c8cdd8' }}>
         {/* Topbar modale */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-slate-200 flex-shrink-0">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 18px', borderBottom: '1px solid #c8cdd8', flexShrink: 0 }}>
           <div>
-            <span className="font-semibold text-slate-800 text-sm">{version?.title}</span>
-            <span className="ml-2 text-xs text-slate-400">{version?.angle}</span>
+            <span style={{ fontWeight: 600, color: '#1a2035', fontSize: 13 }}>{version?.title}</span>
+            {version?.angle && <span style={{ marginLeft: 10, fontSize: 11, color: '#8892a4' }}>{version.angle}</span>}
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+            style={{ background: 'none', border: '1px solid #c8cdd8', padding: '4px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', color: '#4a5368' }}
           >
-            <X size={18} />
+            <X size={16} />
           </button>
         </div>
 
         {/* Corps scrollable — rendu du CV */}
-        <div className="overflow-y-auto flex-1">
+        <div style={{ overflowY: 'auto', flex: 1 }}>
           {/* Simuler le rendu A4 avec le même design que le PDF */}
           <div
             style={{ fontFamily: 'Arial, Helvetica, sans-serif', fontSize: '10px', color: '#2d2d2d', background: '#fff' }}
@@ -237,3 +237,4 @@ export default function CVPreviewModal({ version, onClose }) {
     </div>
   );
 }
+

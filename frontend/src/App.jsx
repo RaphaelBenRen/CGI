@@ -15,9 +15,9 @@ function AppLayout() {
   const hideNav = ['/login', '/register'].includes(location.pathname) || location.pathname.startsWith('/edit/');
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="app-shell">
       {!hideNav && <Navbar />}
-      <main>
+      <main className="page-content">
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />

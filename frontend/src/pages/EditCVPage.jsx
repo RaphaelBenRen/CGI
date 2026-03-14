@@ -38,12 +38,16 @@ function Editable({ value, onChange, style, block = false, className = '' }) {
         display: block ? 'block' : 'inline-block',
         outline: 'none',
         cursor: 'text',
-        borderRadius: 3,
         minWidth: '2em',
         minHeight: '1em',
+        transition: 'background .1s',
         ...style,
       }}
-      className={`hover:bg-blue-100/50 focus:bg-blue-50 focus:ring-1 focus:ring-blue-400 ${className}`}
+      onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,48,135,.08)'; }}
+      onMouseLeave={(e) => { if (document.activeElement !== e.currentTarget) e.currentTarget.style.background = ''; }}
+      onFocus={(e) => { e.currentTarget.style.background = 'rgba(0,48,135,.06)'; e.currentTarget.style.outline = '1px solid rgba(0,48,135,.4)'; }}
+      onBlurCapture={(e) => { e.currentTarget.style.background = ''; e.currentTarget.style.outline = 'none'; }}
+      className={className}
     />
   );
 }
@@ -292,40 +296,46 @@ export default function EditCVPage() {
     } finally { setDownloading(false); }
   };
 
-  if (loading) return <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" /></div>;
-  if (!cvData) return <div className="text-center py-20 text-slate-500">Version introuvable.</div>;
+  if (loading) return (
+    <div style={{ display: 'flex', justifyContent: 'center', padding: '80px 0' }}>
+      <span className="spinner" />
+    </div>
+  );
+  if (!cvData) return (
+    <div style={{ textAlign: 'center', padding: '80px 0', color: '#8892a4' }}>Version introuvable.</div>
+  );
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-slate-200">
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', background: '#dde2ec' }}>
 
       {/* Topbar */}
-      <div className="flex items-center justify-between px-5 py-3 bg-white border-b border-slate-200 shadow-sm flex-shrink-0">
-        <div className="flex items-center gap-3">
-          <button onClick={() => navigate(-1)} className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors">
-            <ChevronLeft size={18} />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 20px', background: '#fff', borderBottom: '1px solid #c8cdd8', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <button onClick={() => navigate(-1)} style={{ background: 'none', border: '1px solid #c8cdd8', padding: '5px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', color: '#4a5368' }}>
+            <ChevronLeft size={16} />
           </button>
           <div>
-            <span className="font-semibold text-slate-800 text-sm">{version?.title || 'Éditer le CV'}</span>
-            <span className="ml-2 text-xs text-slate-400">{version?.angle}</span>
+            <span style={{ fontWeight: 600, color: '#1a2035', fontSize: 13 }}>{version?.title || 'Éditer le CV'}</span>
+            {version?.angle && <span style={{ marginLeft: 10, fontSize: 11, color: '#8892a4' }}>{version.angle}</span>}
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-slate-400 hidden sm:block">Cliquez sur n'importe quel texte pour le modifier</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: 11, color: '#8892a4' }}>Cliquez sur n'importe quel texte pour le modifier</span>
           <button onClick={handleDownload} disabled={downloading}
-            className="flex items-center gap-1.5 px-3 py-2 border border-slate-200 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-60">
-            {downloading ? <div className="w-3.5 h-3.5 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" /> : <Download size={13} />}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', border: '1px solid #c8cdd8', background: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: '#1a2035', opacity: downloading ? .5 : 1 }}>
+            {downloading ? <span className="spinner spinner--sm" /> : <Download size={13} />}
             Télécharger PDF
           </button>
           <button onClick={handleSave} disabled={saving}
-            className="flex items-center gap-1.5 px-3 py-2 bg-blue-700 hover:bg-blue-800 disabled:opacity-60 text-white rounded-lg text-sm font-medium transition-colors">
-            {saving ? <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Save size={13} />}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', background: '#003087', border: '1px solid #003087', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: '#fff', opacity: saving ? .6 : 1 }}>
+            {saving ? <span className="spinner spinner--sm spinner--white" /> : <Save size={13} />}
             {saved ? 'Sauvegardé ✓' : 'Sauvegarder'}
           </button>
         </div>
       </div>
 
-      {/* Corps : CV centré + hint */}
-      <div className="flex-1 overflow-y-auto py-8 px-4 flex justify-center">
+      {/* Corps : CV centré */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '32px 16px', display: 'flex', justifyContent: 'center' }}>
         <div style={{ width: '210mm', flexShrink: 0 }}>
           <CVEditable cvData={cvData} update={update} updateExp={updateExp} />
         </div>
