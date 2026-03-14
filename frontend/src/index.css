@@ -598,6 +598,53 @@ input, textarea, select { font-family: var(--font); }
 .cv-card__angle { font-size: 11px; color: var(--c-text-3); margin-top: 2px; }
 .cv-card__actions { display: flex; gap: 6px; }
 
+/* ─── Mode selector ─────────────────────────────────────────── */
+.mode-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.mode-card {
+  border: 2px solid var(--c-border);
+  padding: 16px;
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--c-surface);
+  position: relative;
+}
+.mode-card:hover { border-color: #90a8cc; }
+.mode-card--active {
+  border-color: var(--c-primary);
+  background: var(--c-primary-lt);
+}
+.mode-card__icon {
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--c-surface-2);
+  border: 1px solid var(--c-border);
+  color: var(--c-primary);
+  margin-bottom: 4px;
+}
+.mode-card--active .mode-card__icon {
+  background: var(--c-primary);
+  color: #fff;
+  border-color: var(--c-primary-dk);
+}
+.mode-card__title { font-size: 13px; font-weight: 700; color: var(--c-text); }
+.mode-card__sub   { font-size: 11px; color: var(--c-text-3); line-height: 1.4; }
+.mode-card--active .mode-card__title { color: var(--c-primary); }
+.mode-card__check {
+  position: absolute;
+  top: 8px; right: 8px;
+  width: 16px; height: 16px;
+  background: var(--c-primary);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+}
+
 /* ─── Utilities ─────────────────────────────────────────────── */
 .flex { display: flex; }
 .flex-col { flex-direction: column; }

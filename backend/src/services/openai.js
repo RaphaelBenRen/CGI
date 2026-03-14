@@ -18,33 +18,19 @@ Structure JSON attendue:\n${JSON_STRUCTURE}`;
 
 /**
  * Extrait les données structurées d'un CV.
- * Accepte { type: 'image', content: base64 } ou { type: 'text', content: string } ou string directement.
  */
 async function extractCVData(parsed) {
   let messages;
 
   if (parsed && parsed.type === 'image') {
-    // Mode vision : GPT-4o lit l'image du CV
-    messages = [
-      {
-        role: 'user',
-        content: [
-          {
-            type: 'text',
-            text: EXTRACT_INSTRUCTION,
-          },
-          {
-            type: 'image_url',
-            image_url: {
-              url: `data:image/png;base64,${parsed.content}`,
-              detail: 'high',
-            },
-          },
-        ],
-      },
-    ];
+    messages = [{
+      role: 'user',
+      content: [
+        { type: 'text', text: EXTRACT_INSTRUCTION },
+        { type: 'image_url', image_url: { url: `data:image/png;base64,${parsed.content}`, detail: 'high' } },
+      ],
+    }];
   } else {
-    // Mode texte (Word ou fallback)
     const cvText = parsed && parsed.content ? parsed.content : String(parsed);
     messages = [
       { role: 'system', content: EXTRACT_INSTRUCTION },
@@ -64,52 +50,61 @@ async function extractCVData(parsed) {
 }
 
 /**
- * Génère 3 versions de CV adaptées à un poste cible
+ * Génère 3 versions de CV selon le mode choisi.
+ * mode = 'update'     → intègre nouvelles missions/compétences, CV à jour
+ * mode = 'job_target' → optimise pour le poste cible, met en avant ce qui est pertinent
  */
-async function generateCVVersions(cvData, skillsText, jobTitle) {
+async function generateCVVersions(cvData, skillsText, jobTitle, mode = 'update') {
   const cvJson = JSON.stringify(cvData, null, 2);
+  const isJobTarget = mode === 'job_target';
 
   const systemPrompt = `Tu es un expert RH et rédacteur de CV chez CGI, un des plus grands cabinets de conseil en informatique.
 Tu génères des CV professionnels pour des consultants IT.
 Réponds UNIQUEMENT avec un JSON valide, sans texte autour, sans markdown.
 
 RÈGLES ABSOLUES:
-1. Tu DOIS conserver les informations personnelles du consultant (nom, email, téléphone, etc.) TELLES QUELLES dans les 3 versions
-2. Tu DOIS conserver TOUTES les expériences professionnelles dans les 3 versions — ne jamais en supprimer
-3. Tu DOIS conserver TOUTES les formations dans les 3 versions
-4. REMPLISSAGE DE PAGE: chaque version de CV doit occuper TOUTE la page A4. Pour cela:
-   - Résumé professionnel: 4 à 5 phrases complètes et percutantes (texte continu, pas une liste)
-   - Chaque expérience: 4 à 5 missions détaillées (phrases complètes avec verbes d'action et résultats)
-   - Compétences: liste exhaustive (minimum 12 compétences)
-   - Si le contenu existant est insuffisant pour remplir la page, enrichis les descriptions avec des reformulations professionnelles plus développées
-5. Les compétences nouvelles de la fiche doivent être AJOUTÉES aux compétences existantes
-6. Les nouvelles missions de la fiche doivent être INTÉGRÉES dans les expériences correspondantes ou ajoutées comme nouvelle expérience
-7. Les 3 versions doivent avoir des cv_data COMPLETS — aucune donnée ne doit être omise ou remplacée par des placeholders`;
+1. Conserve les informations personnelles du consultant (nom, email, téléphone, etc.) TELLES QUELLES dans les 3 versions
+2. Conserve TOUTES les expériences professionnelles dans les 3 versions — ne jamais en supprimer
+3. Conserve TOUTES les formations dans les 3 versions
+4. REMPLISSAGE DE PAGE: chaque version doit occuper TOUTE la page A4:
+   - Résumé professionnel: 4 à 5 phrases complètes et percutantes (texte continu)
+   - Chaque expérience: 4 à 5 missions détaillées avec verbes d'action et résultats concrets
+   - Compétences: minimum 12, liste exhaustive
+5. ${isJobTarget
+    ? `MODE OPTIMISATION POSTE: pour le poste "${jobTitle}", réordonne les compétences et expériences en mettant EN PREMIER celles qui sont les plus pertinentes pour ce poste. Reformule les missions pour faire ressortir les mots-clés du domaine.`
+    : 'MODE MISE À JOUR: intègre les nouvelles missions et compétences de la fiche dans le CV existant. Les missions les plus récentes apparaissent en premier dans chaque expérience.'}
+6. Les 3 versions doivent avoir des cv_data COMPLETS — aucune donnée omise ou placeholder`;
 
-  const userPrompt = `Voici les données RÉELLES et COMPLÈTES du consultant extraites de son CV:
+  const userPrompt = `Voici les données RÉELLES et COMPLÈTES du consultant:
 ${cvJson}
 
-${skillsText ? `Voici les nouvelles compétences/missions à intégrer dans le CV:\n${skillsText}\n` : ''}
-${jobTitle ? `\nPoste cible: "${jobTitle}" — optimise le CV pour ce poste.` : '\nMets à jour le CV en intégrant les nouvelles informations.'}
+${skillsText ? `Nouvelles compétences/missions à intégrer:\n${skillsText}\n` : ''}
+${isJobTarget
+  ? `\nPOSTE CIBLE: "${jobTitle}"\nOptimise les 3 versions pour ce poste: mets en avant les expériences et compétences les plus pertinentes, adapte le résumé et les missions pour correspondre au profil recherché.`
+  : '\nMets à jour le CV en intégrant toutes les nouvelles informations disponibles.'}
 
-Génère 3 versions différentes du CV en réutilisant EXACTEMENT les données ci-dessus.
-Les 3 versions partagent les mêmes données de base (personal_info, education, certifications, languages) et reformulent uniquement le summary, les missions des expériences et l'ordre/sélection des compétences selon l'angle.
+Génère 3 versions en réutilisant EXACTEMENT les données du consultant ci-dessus.
+Les 3 versions ont les mêmes personal_info, education, certifications, languages.
+Elles diffèrent par: le summary, la formulation des missions, et l'ordre/sélection des compétences selon l'angle.
 
-Angles:
-1. type "technique" — résumé et missions reformulés pour mettre en avant l'expertise tech et les outils
-2. type "experience" — résumé et missions reformulés pour mettre en avant les réalisations et l'impact métier
-3. type "equilibre" — version équilibrée entre compétences techniques et expériences
+${isJobTarget ? `Angles pour le poste "${jobTitle}":
+1. type "technique" — profil centré sur les compétences techniques les plus pertinentes pour le poste
+2. type "experience" — profil centré sur les réalisations et l'impact en lien avec le poste
+3. type "equilibre" — profil équilibré optimisé pour le poste` : `Angles de mise à jour:
+1. type "technique" — nouvelles compétences techniques mises en avant, missions récentes détaillées
+2. type "experience" — nouvelles réalisations et impact métier mis en avant
+3. type "equilibre" — version équilibrée intégrant toutes les nouvelles informations`}
 
-Format de réponse JSON:
+Format JSON de réponse:
 {
   "versions": [
-    { "type": "technique", "title": "string", "angle": "string", "cv_data": { <structure complète> } },
-    { "type": "experience", "title": "string", "angle": "string", "cv_data": { <structure complète> } },
-    { "type": "equilibre", "title": "string", "angle": "string", "cv_data": { <structure complète> } }
+    { "type": "technique", "title": "string", "angle": "string", "cv_data": { <structure complète avec vraies données> } },
+    { "type": "experience", "title": "string", "angle": "string", "cv_data": { <structure complète avec vraies données> } },
+    { "type": "equilibre", "title": "string", "angle": "string", "cv_data": { <structure complète avec vraies données> } }
   ]
 }
 
-Chaque cv_data contient: personal_info (identique aux données source), summary (4-5 phrases), skills (tableau, 12 minimum), experiences (tableau avec title/company/period/location/missions), education, certifications, languages.`;
+Chaque cv_data: personal_info, summary (4-5 phrases), skills (12+ items), experiences (avec missions détaillées), education, certifications, languages.`;
 
   const response = await client.chat.completions.create({
     model: 'gpt-4o',
@@ -125,4 +120,46 @@ Chaque cv_data contient: personal_info (identique aux données source), summary 
   return JSON.parse(response.choices[0].message.content);
 }
 
-module.exports = { extractCVData, generateCVVersions };
+/**
+ * Génère une fiche de compétences structurée depuis les données du CV.
+ * Retourne { personal_info, competences_techniques, competences_fonctionnelles,
+ *            missions_recentes, formations, certifications, langues, nouvelles_missions_a_ajouter }
+ */
+async function generateSkillsSheet(cvData) {
+  const cvJson = JSON.stringify(cvData, null, 2);
+
+  const prompt = `Tu es un expert RH chez CGI. À partir du CV ci-dessous, génère une fiche de compétences structurée.
+Cette fiche servira au consultant pour documenter ses nouvelles missions et la soumettre pour mise à jour de son CV.
+
+CV source:
+${cvJson}
+
+Retourne UNIQUEMENT ce JSON valide:
+{
+  "personal_info": { "full_name": "string", "title": "string", "email": "string" },
+  "competences_techniques": ["liste des compétences techniques extraites du CV"],
+  "competences_fonctionnelles": ["compétences métier, gestion de projet, etc."],
+  "missions_recentes": [
+    { "entreprise": "string", "periode": "string", "poste": "string", "missions": ["mission 1", "mission 2", "..."] }
+  ],
+  "formations": [{ "diplome": "string", "etablissement": "string", "annee": "string" }],
+  "certifications": ["liste des certifications"],
+  "langues": [{ "langue": "string", "niveau": "string" }],
+  "nouvelles_missions_a_ajouter": [
+    { "entreprise": "À compléter", "periode": "À compléter", "poste": "À compléter", "missions": ["À décrire..."] }
+  ],
+  "nouvelles_competences_a_ajouter": ["À compléter..."]
+}`;
+
+  const response = await client.chat.completions.create({
+    model: 'gpt-4o',
+    messages: [{ role: 'user', content: prompt }],
+    response_format: { type: 'json_object' },
+    temperature: 0.1,
+    max_tokens: 4000,
+  });
+
+  return JSON.parse(response.choices[0].message.content);
+}
+
+module.exports = { extractCVData, generateCVVersions, generateSkillsSheet };

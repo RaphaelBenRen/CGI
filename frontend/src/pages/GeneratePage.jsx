@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { cvApi } from '../services/api';
 import { Sparkles, AlertCircle, CheckCircle } from 'lucide-react';
 
 export default function GeneratePage() {
   const { sessionId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const mode = location.state?.mode || 'update';
+
   const [status, setStatus] = useState('idle');
   const [error, setError] = useState('');
   const [step, setStep] = useState(0);
@@ -28,7 +31,7 @@ export default function GeneratePage() {
         setStep((s) => (s < steps.length - 1 ? s + 1 : s));
       }, 3000);
       try {
-        await cvApi.generate(sessionId);
+        await cvApi.generate(sessionId, { mode });
         clearInterval(interval);
         setStatus('done');
         setTimeout(() => navigate(`/session/${sessionId}`), 1000);
@@ -52,9 +55,10 @@ export default function GeneratePage() {
             </div>
             <div className="generate-box__title">Génération en cours</div>
             <div className="generate-box__sub">
-              L'IA analyse votre profil et prépare 3 versions de CV personnalisées.
+              {mode === 'job_target'
+                ? "L'IA optimise votre profil pour le poste cible et prépare 3 versions."
+                : "L'IA intègre vos nouvelles missions et prépare 3 versions mises à jour."}
             </div>
-
             <div className="steps">
               {steps.map((s, i) => {
                 const state = i < step ? 'done' : i === step ? 'active' : 'idle';
@@ -73,12 +77,8 @@ export default function GeneratePage() {
                 );
               })}
             </div>
-
             <div className="progress-bar" style={{ marginTop: 24 }}>
-              <div
-                className="progress-bar__fill"
-                style={{ width: `${((step + 1) / steps.length) * 100}%` }}
-              />
+              <div className="progress-bar__fill" style={{ width: `${((step + 1) / steps.length) * 100}%` }} />
             </div>
           </>
         )}
@@ -100,12 +100,7 @@ export default function GeneratePage() {
             </div>
             <div className="generate-box__title">Erreur de génération</div>
             <div className="alert alert--error" style={{ marginBottom: 20, marginTop: 8 }}>{error}</div>
-            <button
-              onClick={() => navigate('/upload')}
-              className="btn btn--primary btn--full"
-            >
-              Réessayer
-            </button>
+            <button onClick={() => navigate('/upload')} className="btn btn--primary btn--full">Réessayer</button>
           </>
         )}
       </div>

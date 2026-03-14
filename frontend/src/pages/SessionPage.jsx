@@ -78,7 +78,7 @@ export default function SessionPage() {
     } finally { setDownloadingId(null); }
   };
 
-  if (loading) return (
+if (loading) return (
     <div style={{ display: 'flex', justifyContent: 'center', padding: '80px 0' }}>
       <span className="spinner" />
     </div>
@@ -97,7 +97,7 @@ export default function SessionPage() {
           <button className="session-header__back" onClick={() => navigate('/dashboard')}>
             <ChevronLeft size={16} />
           </button>
-          <div>
+          <div style={{ flex: 1 }}>
             <div className="session-header__title">
               {session.job_title ? `Propositions — "${session.job_title}"` : 'Propositions de CV'}
             </div>
@@ -106,6 +106,7 @@ export default function SessionPage() {
               {versions.length} version{versions.length > 1 ? 's' : ''} générée{versions.length > 1 ? 's' : ''} — cliquez sur un CV pour l'ouvrir et le modifier
             </div>
           </div>
+
         </div>
       </div>
 
@@ -129,19 +130,11 @@ export default function SessionPage() {
                 )}
               </div>
 
-              <MiniPreview
-                cvData={version.cv_data}
-                onClick={() => navigate(`/edit/${version.id}`)}
-              />
+              <MiniPreview cvData={version.cv_data} onClick={() => navigate(`/edit/${version.id}`)} />
 
               <div className="cv-card__actions">
-                <button
-                  onClick={() => navigate(`/edit/${version.id}`)}
-                  className="btn btn--primary btn--sm"
-                  style={{ flex: 1 }}
-                >
-                  <Pencil size={12} />
-                  Ouvrir &amp; modifier
+                <button onClick={() => navigate(`/edit/${version.id}`)} className="btn btn--primary btn--sm" style={{ flex: 1 }}>
+                  <Pencil size={12} /> Ouvrir &amp; modifier
                 </button>
 
                 <button
@@ -149,19 +142,11 @@ export default function SessionPage() {
                   disabled={selectingId === version.id || selected}
                   className={`btn btn--sm ${selected ? 'btn--outline' : 'btn--ghost'}`}
                 >
-                  <Check size={12} />
-                  {selected ? 'Choisi' : 'Choisir'}
+                  <Check size={12} /> {selected ? 'Choisi' : 'Choisir'}
                 </button>
 
-                <button
-                  onClick={() => handleDownload(version)}
-                  disabled={downloadingId === version.id}
-                  className="btn btn--ghost btn--sm"
-                >
-                  {downloadingId === version.id
-                    ? <span className="spinner spinner--sm" />
-                    : <Download size={12} />
-                  }
+                <button onClick={() => handleDownload(version)} disabled={downloadingId === version.id} className="btn btn--ghost btn--sm">
+                  {downloadingId === version.id ? <span className="spinner spinner--sm" /> : <Download size={12} />}
                   PDF
                 </button>
               </div>
@@ -169,6 +154,8 @@ export default function SessionPage() {
           );
         })}
       </div>
+
+
     </div>
   );
 }

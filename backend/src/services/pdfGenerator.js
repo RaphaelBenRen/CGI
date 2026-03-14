@@ -347,4 +347,177 @@ function buildCVHTML(cvData) {
 </html>`;
 }
 
-module.exports = { generatePDF };
+/**
+ * Génère un PDF de fiche de compétences
+ */
+async function generateSkillsSheetPDF(data) {
+  const html = buildSkillsSheetHTML(data);
+  const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] });
+  try {
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: 'networkidle0' });
+    const pdfUint8 = await page.pdf({
+      format: 'A4',
+      printBackground: true,
+      margin: { top: '0', bottom: '0', left: '0', right: '0' },
+    });
+    return Buffer.from(pdfUint8);
+  } finally {
+    await browser.close();
+  }
+}
+
+function buildSkillsSheetHTML(data) {
+  const p = data.personal_info || {};
+  const competTech = data.competences_techniques || [];
+  const competFunc = data.competences_fonctionnelles || [];
+  const missions = data.missions_recentes || [];
+  const formations = data.formations || [];
+  const certifications = data.certifications || [];
+  const langues = data.langues || [];
+  const newMissions = data.nouvelles_missions_a_ajouter || [];
+  const newCompetences = data.nouvelles_competences_a_ajouter || [];
+
+  const skillTag = (s) => `<span style="display:inline-block;background:#003087;color:#fff;padding:2px 8px;font-size:8px;margin:2px 2px 2px 0;font-weight:500">${escapeHtml(s)}</span>`;
+  const emptyTag = (s) => `<span style="display:inline-block;background:#f0f2f5;color:#888;border:1px dashed #c0c8d8;padding:2px 8px;font-size:8px;margin:2px 2px 2px 0;font-style:italic">${escapeHtml(s)}</span>`;
+
+  const sectionTitle = (t, color = '#003087') =>
+    `<div style="font-size:8px;font-weight:700;color:${color};text-transform:uppercase;letter-spacing:1.2px;padding-bottom:3px;border-bottom:1.5px solid ${color};margin-bottom:8px">${t}</div>`;
+
+  const missionsHTML = missions.map((m) => `
+    <div style="margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #eef0f8">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:3px">
+        <div>
+          <div style="font-size:9px;font-weight:700;color:#1a1a2e">${escapeHtml(m.poste)}</div>
+          <div style="font-size:8px;color:#003087;font-weight:500">${escapeHtml(m.entreprise)}</div>
+        </div>
+        <span style="font-size:7.5px;color:#888;background:#e8eeff;padding:1px 6px;white-space:nowrap;margin-left:8px">${escapeHtml(m.periode)}</span>
+      </div>
+      <ul style="padding-left:12px;margin:0">
+        ${(m.missions || []).map((ms) => `<li style="font-size:8px;color:#333;margin-bottom:1.5px;line-height:1.4">${escapeHtml(ms)}</li>`).join('')}
+      </ul>
+    </div>`).join('');
+
+  const newMissionsHTML = newMissions.map((m) => `
+    <div style="margin-bottom:10px;padding:10px;background:#fffbe6;border:1px dashed #f0c040">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+        <div>
+          <div style="font-size:9px;font-weight:700;color:#1a1a2e">${escapeHtml(m.poste)}</div>
+          <div style="font-size:8px;color:#555">${escapeHtml(m.entreprise)}</div>
+        </div>
+        <span style="font-size:7.5px;color:#888;padding:1px 6px;background:#f5f5f5">${escapeHtml(m.periode)}</span>
+      </div>
+      <ul style="padding-left:12px;margin:0">
+        ${(m.missions || []).map((ms) => `<li style="font-size:8px;color:#555;margin-bottom:2px;line-height:1.4;font-style:italic">${escapeHtml(ms)}</li>`).join('')}
+      </ul>
+    </div>`).join('');
+
+  return `<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    * { margin:0;padding:0;box-sizing:border-box; }
+    html,body { width:210mm;font-family:Arial,Helvetica,sans-serif;font-size:9px;color:#2d2d2d;background:#fff;line-height:1.4; }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div style="background:linear-gradient(135deg,#003087 0%,#0050c8 100%);color:#fff;padding:14px 28px 10px">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start">
+    <div>
+      <div style="font-size:18px;font-weight:700;letter-spacing:0.3px">${escapeHtml(p.full_name || 'Consultant')}</div>
+      ${p.title ? `<div style="font-size:10px;color:#a8c4ff;margin-top:2px">${escapeHtml(p.title)}</div>` : ''}
+      ${p.email ? `<div style="font-size:8.5px;color:#c8daff;margin-top:4px">✉ ${escapeHtml(p.email)}</div>` : ''}
+    </div>
+    <div style="text-align:right">
+      <div style="background:rgba(255,255,255,0.15);padding:4px 10px;border:1px solid rgba(255,255,255,0.3);font-size:10px;font-weight:700;letter-spacing:1px">CGI</div>
+      <div style="font-size:8px;color:rgba(255,255,255,0.6);margin-top:6px;font-style:italic">Fiche de compétences</div>
+    </div>
+  </div>
+</div>
+
+<!-- BODY -->
+<div style="display:grid;grid-template-columns:175px 1fr;grid-template-rows:1fr;min-height:0">
+
+  <!-- SIDEBAR -->
+  <div style="background:#f0f4ff;padding:14px 12px;border-right:2px solid #dde8ff;align-self:stretch">
+
+    ${competTech.length > 0 ? `
+    <div style="margin-bottom:12px">
+      ${sectionTitle('Compétences techniques')}
+      <div>${competTech.map(skillTag).join('')}</div>
+    </div>` : ''}
+
+    ${competFunc.length > 0 ? `
+    <div style="margin-bottom:12px">
+      ${sectionTitle('Compétences fonctionnelles')}
+      <div>${competFunc.map(skillTag).join('')}</div>
+    </div>` : ''}
+
+    ${newCompetences.length > 0 ? `
+    <div style="margin-bottom:12px">
+      ${sectionTitle('Nouvelles compétences', '#b08000')}
+      <div style="font-size:7.5px;color:#888;font-style:italic;margin-bottom:4px">À compléter / à ajouter au CV</div>
+      <div>${newCompetences.map(emptyTag).join('')}</div>
+    </div>` : ''}
+
+    ${formations.length > 0 ? `
+    <div style="margin-bottom:12px">
+      ${sectionTitle('Formation')}
+      ${formations.map((f) => `
+        <div style="margin-bottom:7px">
+          <div style="font-weight:600;font-size:8px;color:#1a1a2e">${escapeHtml(f.diplome)}</div>
+          <div style="font-size:7.5px;color:#555;margin-top:1px">${escapeHtml(f.etablissement)}${f.annee ? ` — ${escapeHtml(f.annee)}` : ''}</div>
+        </div>`).join('')}
+    </div>` : ''}
+
+    ${langues.length > 0 ? `
+    <div style="margin-bottom:12px">
+      ${sectionTitle('Langues')}
+      ${langues.map((l) => `
+        <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+          <span style="font-weight:600;font-size:8px">${escapeHtml(l.langue)}</span>
+          <span style="font-size:7.5px;color:#003087">${escapeHtml(l.niveau)}</span>
+        </div>`).join('')}
+    </div>` : ''}
+
+    ${certifications.length > 0 ? `
+    <div>
+      ${sectionTitle('Certifications')}
+      <ul style="padding-left:10px;margin:0">
+        ${certifications.map((c) => `<li style="font-size:7.5px;margin-bottom:2px">${escapeHtml(c)}</li>`).join('')}
+      </ul>
+    </div>` : ''}
+  </div>
+
+  <!-- MAIN -->
+  <div style="padding:14px 20px">
+
+    ${missionsHTML ? `
+    <div style="margin-bottom:12px">
+      ${sectionTitle('Missions récentes (extraites du CV)')}
+      ${missionsHTML}
+    </div>` : ''}
+
+    <div>
+      ${sectionTitle('Nouvelles missions à ajouter au CV', '#b08000')}
+      <div style="font-size:8px;color:#888;font-style:italic;margin-bottom:10px;padding:6px 10px;background:#fffbe6;border-left:2px solid #f0c040">
+        Complétez les sections ci-dessous avec vos nouvelles missions, puis soumettez cette fiche pour mettre votre CV à jour.
+      </div>
+      ${newMissionsHTML || '<div style="font-size:8px;color:#aaa;font-style:italic">Aucune nouvelle mission définie.</div>'}
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div style="background:#003087;color:rgba(255,255,255,0.6);text-align:center;padding:4px;font-size:7px;letter-spacing:0.3px">
+  Document généré via la Plateforme CGI — Fiche de compétences confidentielle
+</div>
+
+</body>
+</html>`;
+}
+
+module.exports = { generatePDF, generateSkillsSheetPDF };

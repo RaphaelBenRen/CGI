@@ -4,8 +4,8 @@ const router = express.Router();
 const { requireAuth } = require('../middleware/auth');
 const { supabase } = require('../services/supabase');
 const { parseFile } = require('../services/parser');
-const { extractCVData } = require('../services/openai');
-const { generatePDF } = require('../services/pdfGenerator');
+const { extractCVData, generateSkillsSheet } = require('../services/openai');
+const { generatePDF, generateSkillsSheetPDF } = require('../services/pdfGenerator');
 const { v4: uuidv4 } = require('uuid');
 
 const upload = multer({
@@ -196,6 +196,42 @@ router.get('/version/:versionId/pdf', requireAuth, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Erreur lors de la génération du PDF' });
+  }
+});
+
+// Générer et télécharger une fiche de compétences pour une session
+router.get('/session/:sessionId/skills-sheet', requireAuth, async (req, res) => {
+  // Récupérer la session avec une version de CV (on prend la première disponible)
+  const { data: session, error: sessionError } = await supabase
+    .from('cv_sessions')
+    .select('*, cv_versions(*)')
+    .eq('id', req.params.sessionId)
+    .eq('user_id', req.user.id)
+    .single();
+
+  if (sessionError || !session) return res.status(404).json({ error: 'Session introuvable' });
+
+  // Prendre la version sélectionnée ou la première disponible
+  const versions = session.cv_versions || [];
+  const version = versions.find((v) => v.is_selected) || versions[0];
+
+  if (!version) return res.status(404).json({ error: 'Aucune version de CV disponible' });
+
+  try {
+    // Générer la fiche de compétences avec GPT
+    const sheetData = await generateSkillsSheet(version.cv_data);
+
+    // Générer le PDF
+    const pdfBuffer = await generateSkillsSheetPDF(sheetData);
+
+    const name = (version.cv_data?.personal_info?.full_name || 'consultant').replace(/\s+/g, '_');
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="Fiche_Competences_${name}.pdf"`);
+    res.setHeader('Content-Length', pdfBuffer.length);
+    res.end(pdfBuffer);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur lors de la génération de la fiche' });
   }
 });
 

@@ -1,17 +1,12 @@
-const puppeteer = require('puppeteer');
 const mammoth = require('mammoth');
-const fs = require('fs');
-const os = require('os');
-const path = require('path');
+const PDFParser = require('pdf2json');
 
 /**
- * Parse un fichier PDF ou Word.
- * Pour les PDF : screenshot via Puppeteer + retourne base64 pour GPT-4o Vision.
- * Pour les Word : extraction texte brut.
+ * Parse un fichier PDF ou Word vers du texte brut.
  */
 async function parseFile(buffer, mimetype) {
   if (mimetype === 'application/pdf') {
-    return parsePDFToImage(buffer);
+    return parsePDFText(buffer);
   } else if (
     mimetype.includes('wordprocessingml') ||
     mimetype.includes('msword')
@@ -23,48 +18,33 @@ async function parseFile(buffer, mimetype) {
 }
 
 /**
- * Rend le PDF avec Puppeteer (Chrome) et le screenshote en haute résolution.
- * Retourne un tableau de base64 PNG (une image par page visible).
+ * Extrait le texte brut d'un PDF via pdf2json.
  */
-async function parsePDFToImage(buffer) {
-  const tmpFile = path.join(os.tmpdir(), `cv_parse_${Date.now()}.pdf`);
-  fs.writeFileSync(tmpFile, buffer);
+async function parsePDFText(buffer) {
+  return new Promise((resolve, reject) => {
+    const pdfParser = new PDFParser(null, 1);
 
-  let browser;
-  try {
-    browser = await puppeteer.launch({
-      headless: true,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-web-security',
-      ],
+    pdfParser.on('pdfParser_dataError', (errData) =>
+      reject(new Error(errData.parserError || 'Erreur parsing PDF'))
+    );
+
+    pdfParser.on('pdfParser_dataReady', () => {
+      try {
+        const raw = pdfParser.getRawTextContent();
+        // Nettoyer les artefacts de parsing
+        const text = raw
+          .replace(/\r/g, '')
+          .replace(/\f/g, '\n')
+          .replace(/\n{4,}/g, '\n\n')
+          .trim();
+        resolve({ type: 'text', content: text });
+      } catch (e) {
+        reject(e);
+      }
     });
 
-    const page = await browser.newPage();
-
-    // Résolution haute pour une bonne lecture par GPT-4o Vision
-    await page.setViewport({ width: 900, height: 1200, deviceScaleFactor: 2 });
-
-    const fileUrl = `file:///${tmpFile.replace(/\\/g, '/')}`;
-    await page.goto(fileUrl, { waitUntil: 'networkidle0', timeout: 30000 });
-
-    // Laisser le PDF viewer de Chrome finir de rendre
-    await new Promise((r) => setTimeout(r, 2500));
-
-    const screenshot = await page.screenshot({
-      type: 'png',
-      fullPage: true,
-    });
-
-    return {
-      type: 'image',
-      content: Buffer.from(screenshot).toString('base64'),
-    };
-  } finally {
-    if (browser) await browser.close();
-    try { fs.unlinkSync(tmpFile); } catch (_) {}
-  }
+    pdfParser.parseBuffer(buffer);
+  });
 }
 
 module.exports = { parseFile };

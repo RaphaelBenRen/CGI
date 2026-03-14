@@ -19,7 +19,7 @@ export const cvApi = {
     headers: { 'Content-Type': 'multipart/form-data' },
   }),
 
-  generate: (sessionId) => api.post(`/api/generate/${sessionId}`),
+  generate: (sessionId, body = {}) => api.post(`/api/generate/${sessionId}`, body),
 
   getHistory: () => api.get('/api/cv/history'),
 
@@ -42,6 +42,21 @@ export const cvApi = {
     const a = document.createElement('a');
     a.href = url;
     a.download = fileName || 'cv.pdf';
+    a.click();
+    URL.revokeObjectURL(url);
+  },
+
+  downloadSkillsSheet: async (sessionId, fileName) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const response = await fetch(`${API_URL}/api/cv/session/${sessionId}/skills-sheet`, {
+      headers: { Authorization: `Bearer ${session?.access_token}` },
+    });
+    if (!response.ok) throw new Error('Erreur génération fiche');
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName || 'fiche_competences.pdf';
     a.click();
     URL.revokeObjectURL(url);
   },

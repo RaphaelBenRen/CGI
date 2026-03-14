@@ -63,8 +63,11 @@ router.post('/:sessionId', requireAuth, async (req, res) => {
     // Extraire les données structurées du CV avec GPT
     const cvData = await extractCVData(cvText);
 
+    // Mode : 'update' (mise à jour) | 'job_target' (optimisation pour un poste)
+    const mode = req.body?.mode || 'update';
+
     // Générer les 3 versions
-    const result = await generateCVVersions(cvData, skillsText, session.job_title);
+    const result = await generateCVVersions(cvData, skillsText, session.job_title, mode);
     const versions = result.versions || [];
 
     // Supprimer les anciennes versions si re-génération
