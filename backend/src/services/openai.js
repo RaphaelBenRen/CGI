@@ -74,16 +74,17 @@ Tu génères des CV professionnels pour des consultants IT.
 Réponds UNIQUEMENT avec un JSON valide, sans texte autour, sans markdown.
 
 RÈGLES ABSOLUES:
-1. Tu DOIS conserver les informations personnelles du consultant (nom, email, téléphone, etc.) TELLES QUELLES
-2. Tu DOIS conserver TOUTES les expériences professionnelles — ne jamais en supprimer
-3. Tu DOIS conserver TOUTES les formations
-4. REMPLISSAGE DE PAGE: le CV doit occuper TOUTE la page A4. Pour cela:
-   - Résumé professionnel: 4 à 5 lignes (phrases complètes et percutantes)
+1. Tu DOIS conserver les informations personnelles du consultant (nom, email, téléphone, etc.) TELLES QUELLES dans les 3 versions
+2. Tu DOIS conserver TOUTES les expériences professionnelles dans les 3 versions — ne jamais en supprimer
+3. Tu DOIS conserver TOUTES les formations dans les 3 versions
+4. REMPLISSAGE DE PAGE: chaque version de CV doit occuper TOUTE la page A4. Pour cela:
+   - Résumé professionnel: 4 à 5 phrases complètes et percutantes (texte continu, pas une liste)
    - Chaque expérience: 4 à 5 missions détaillées (phrases complètes avec verbes d'action et résultats)
    - Compétences: liste exhaustive (minimum 12 compétences)
    - Si le contenu existant est insuffisant pour remplir la page, enrichis les descriptions avec des reformulations professionnelles plus développées
 5. Les compétences nouvelles de la fiche doivent être AJOUTÉES aux compétences existantes
-6. Les nouvelles missions de la fiche doivent être INTÉGRÉES dans les expériences correspondantes ou ajoutées comme nouvelle expérience`;
+6. Les nouvelles missions de la fiche doivent être INTÉGRÉES dans les expériences correspondantes ou ajoutées comme nouvelle expérience
+7. Les 3 versions doivent avoir des cv_data COMPLETS — aucune donnée ne doit être omise ou remplacée par des placeholders`;
 
   const userPrompt = `Voici les données RÉELLES et COMPLÈTES du consultant extraites de son CV:
 ${cvJson}
@@ -91,40 +92,24 @@ ${cvJson}
 ${skillsText ? `Voici les nouvelles compétences/missions à intégrer dans le CV:\n${skillsText}\n` : ''}
 ${jobTitle ? `\nPoste cible: "${jobTitle}" — optimise le CV pour ce poste.` : '\nMets à jour le CV en intégrant les nouvelles informations.'}
 
-Génère 3 versions différentes du CV. Chaque version DOIT:
-- Contenir les VRAIES informations du consultant ci-dessus (nom, expériences, formations, etc.)
-- REMPLIR TOUTE LA PAGE A4: résumé de 4-5 lignes, 4-5 missions détaillées par expérience, 12+ compétences
-- Reformuler les missions avec des verbes d'action forts et des résultats concrets (quantifiés si possible)
-- Adapter la formulation et l'emphase selon l'angle choisi
+Génère 3 versions différentes du CV en réutilisant EXACTEMENT les données ci-dessus.
+Les 3 versions partagent les mêmes données de base (personal_info, education, certifications, languages) et reformulent uniquement le summary, les missions des expériences et l'ordre/sélection des compétences selon l'angle.
 
 Angles:
-1. "technique" — Met en avant les compétences techniques, outils, technologies. Résumé orienté expertise tech.
-2. "experience" — Met en avant les réalisations concrètes et l'impact métier. Résumé orienté valeur ajoutée.
-3. "equilibre" — Version équilibrée compétences + expériences. Résumé polyvalent.
+1. type "technique" — résumé et missions reformulés pour mettre en avant l'expertise tech et les outils
+2. type "experience" — résumé et missions reformulés pour mettre en avant les réalisations et l'impact métier
+3. type "equilibre" — version équilibrée entre compétences techniques et expériences
 
-Retourne ce JSON exact:
+Format de réponse JSON:
 {
   "versions": [
-    {
-      "type": "technique",
-      "title": "Titre court descriptif (ex: Développeur Full Stack — Profil Technique)",
-      "angle": "1 phrase décrivant l'angle de cette version",
-      "cv_data": {
-        "personal_info": { "full_name": "...", "email": "...", "phone": "...", "linkedin": "...", "location": "...", "title": "..." },
-        "summary": "Résumé professionnel percutant, max 3 lignes",
-        "skills": ["skill1", "skill2", "..."],
-        "experiences": [
-          { "title": "...", "company": "...", "period": "...", "location": "...", "missions": ["...", "..."] }
-        ],
-        "education": [{ "degree": "...", "school": "...", "year": "...", "details": "..." }],
-        "certifications": ["..."],
-        "languages": [{ "language": "...", "level": "..." }]
-      }
-    },
-    { "type": "experience", "title": "...", "angle": "...", "cv_data": { /* données réelles du consultant */ } },
-    { "type": "equilibre", "title": "...", "angle": "...", "cv_data": { /* données réelles du consultant */ } }
+    { "type": "technique", "title": "string", "angle": "string", "cv_data": { <structure complète> } },
+    { "type": "experience", "title": "string", "angle": "string", "cv_data": { <structure complète> } },
+    { "type": "equilibre", "title": "string", "angle": "string", "cv_data": { <structure complète> } }
   ]
-}`;
+}
+
+Chaque cv_data contient: personal_info (identique aux données source), summary (4-5 phrases), skills (tableau, 12 minimum), experiences (tableau avec title/company/period/location/missions), education, certifications, languages.`;
 
   const response = await client.chat.completions.create({
     model: 'gpt-4o',
@@ -134,7 +119,7 @@ Retourne ce JSON exact:
     ],
     response_format: { type: 'json_object' },
     temperature: 0.5,
-    max_tokens: 10000,
+    max_tokens: 16000,
   });
 
   return JSON.parse(response.choices[0].message.content);

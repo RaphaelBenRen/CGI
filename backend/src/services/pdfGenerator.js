@@ -168,8 +168,9 @@ function buildCVHTML(cvData) {
     .body-grid {
       display: grid;
       grid-template-columns: 175px 1fr;
+      grid-template-rows: 1fr;
       flex: 1;
-      align-items: stretch;
+      min-height: 0;
     }
 
     /* SIDEBAR */
@@ -177,6 +178,7 @@ function buildCVHTML(cvData) {
       background: #f0f4ff;
       padding: 14px 12px;
       border-right: 2px solid #dde8ff;
+      align-self: stretch;
     }
     .sidebar-section { margin-bottom: 12px; }
     .sidebar-title {

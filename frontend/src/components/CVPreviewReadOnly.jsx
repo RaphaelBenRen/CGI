@@ -27,10 +27,10 @@ export default function CVPreviewReadOnly({ cvData }) {
       </div>
 
       {/* BODY */}
-      <div style={{ display: 'grid', gridTemplateColumns: '175px 1fr', flex: 1, alignItems: 'stretch' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '175px 1fr', gridTemplateRows: '1fr', flex: 1, minHeight: 0 }}>
 
         {/* SIDEBAR */}
-        <div style={{ background: '#f0f4ff', padding: '14px 12px', borderRight: '2px solid #dde8ff' }}>
+        <div style={{ background: '#f0f4ff', padding: '14px 12px', borderRight: '2px solid #dde8ff', alignSelf: 'stretch' }}>
 
           {cv.skills?.length > 0 && (
             <SideSection title="Compétences">
