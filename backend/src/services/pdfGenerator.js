@@ -1,6 +1,21 @@
-const puppeteer = require('puppeteer');
-const fs = require('fs');
-const path = require('path');
+const puppeteer = require('puppeteer-core');
+const chromium = require('@sparticuz/chromium');
+
+async function getBrowserArgs() {
+  if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+    return {
+      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH,
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    };
+  }
+  return {
+    args: chromium.args,
+    defaultViewport: chromium.defaultViewport,
+    executablePath: await chromium.executablePath(),
+    headless: chromium.headless,
+  };
+}
 
 /**
  * Génère un PDF à partir des données structurées du CV
@@ -8,18 +23,7 @@ const path = require('path');
 async function generatePDF(cvData) {
   const html = buildCVHTML(cvData);
 
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      '--disable-accelerated-2d-canvas',
-      '--no-zygote',
-      '--single-process',
-      '--disable-gpu',
-    ],
-  });
+  const browser = await puppeteer.launch(await getBrowserArgs());
 
   try {
     const page = await browser.newPage();
@@ -360,18 +364,7 @@ function buildCVHTML(cvData) {
  */
 async function generateSkillsSheetPDF(data) {
   const html = buildSkillsSheetHTML(data);
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      '--disable-accelerated-2d-canvas',
-      '--no-zygote',
-      '--single-process',
-      '--disable-gpu',
-    ],
-  });
+  const browser = await puppeteer.launch(await getBrowserArgs());
   try {
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: 'networkidle0' });
