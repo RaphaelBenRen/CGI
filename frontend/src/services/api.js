@@ -32,6 +32,23 @@ export const cvApi = {
 
   selectVersion: (versionId) => api.post(`/api/cv/version/${versionId}/select`),
 
+  deleteSession: (sessionId) => api.delete(`/api/cv/session/${sessionId}`),
+
+  viewOriginalCV: async (sessionId) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const response = await fetch(`${API_URL}/api/cv/session/${sessionId}/original-cv`, {
+      headers: { Authorization: `Bearer ${session?.access_token}` },
+    });
+    if (!response.ok) throw new Error('Fichier introuvable');
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+  },
+
+  reuseLastCV: (sessionId, formData) => api.post(`/api/cv/reuse-cv/${sessionId}`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }),
+
   downloadPDF: async (versionId, fileName) => {
     const { data: { session } } = await supabase.auth.getSession();
     const response = await fetch(`${API_URL}/api/cv/version/${versionId}/pdf`, {

@@ -235,4 +235,113 @@ router.get('/session/:sessionId/skills-sheet', requireAuth, async (req, res) => 
   }
 });
 
+// Télécharger / visualiser le CV original d'une session
+router.get('/session/:sessionId/original-cv', requireAuth, async (req, res) => {
+  const { sessionId } = req.params;
+  const { data: session } = await supabase
+    .from('cv_sessions')
+    .select('original_cv_path')
+    .eq('id', sessionId)
+    .eq('user_id', req.user.id)
+    .single();
+
+  if (!session) return res.status(404).json({ error: 'Session introuvable' });
+
+  const { data: fileData, error } = await supabase.storage
+    .from('cv-uploads')
+    .download(session.original_cv_path);
+
+  if (error) return res.status(500).json({ error: 'Fichier introuvable' });
+
+  const ext = session.original_cv_path.split('.').pop().toLowerCase();
+  const contentType = ext === 'pdf' ? 'application/pdf'
+    : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+
+  const buffer = Buffer.from(await fileData.arrayBuffer());
+  res.setHeader('Content-Type', contentType);
+  res.setHeader('Content-Disposition', `inline; filename="cv-original.${ext}"`);
+  res.setHeader('Content-Length', buffer.length);
+  res.end(buffer);
+});
+
+// Supprimer une session et ses fichiers
+router.delete('/session/:sessionId', requireAuth, async (req, res) => {
+  const { sessionId } = req.params;
+  const userId = req.user.id;
+
+  const { data: session } = await supabase
+    .from('cv_sessions')
+    .select('original_cv_path, skills_sheet_path')
+    .eq('id', sessionId)
+    .eq('user_id', userId)
+    .single();
+
+  if (!session) return res.status(404).json({ error: 'Session introuvable' });
+
+  // Supprimer les fichiers Supabase Storage
+  if (session.original_cv_path) {
+    await supabase.storage.from('cv-uploads').remove([session.original_cv_path]);
+  }
+  if (session.skills_sheet_path) {
+    await supabase.storage.from('skills-sheets').remove([session.skills_sheet_path]);
+  }
+
+  // Supprimer versions + session (les versions sont supprimées en cascade normalement)
+  await supabase.from('cv_versions').delete().eq('session_id', sessionId);
+  await supabase.from('cv_sessions').delete().eq('id', sessionId).eq('user_id', userId);
+
+  res.json({ message: 'Session supprimée' });
+});
+
+// Réutiliser le CV d'une session précédente (copie dans Supabase Storage)
+router.post('/reuse-cv/:sessionId', requireAuth, upload.fields([{ name: 'skills', maxCount: 1 }]), async (req, res) => {
+  const { sessionId } = req.params;
+  const userId = req.user.id;
+  const { job_title } = req.body;
+
+  const { data: sourceSession } = await supabase
+    .from('cv_sessions')
+    .select('original_cv_path')
+    .eq('id', sessionId)
+    .eq('user_id', userId)
+    .single();
+
+  if (!sourceSession) return res.status(404).json({ error: 'Session introuvable' });
+
+  const newSessionId = uuidv4();
+  const ext = sourceSession.original_cv_path.split('.').pop();
+  const newCvPath = `${userId}/${newSessionId}/cv-original.${ext}`;
+
+  const { error: copyError } = await supabase.storage
+    .from('cv-uploads')
+    .copy(sourceSession.original_cv_path, newCvPath);
+
+  if (copyError) return res.status(500).json({ error: 'Impossible de copier le CV' });
+
+  // Upload fiche compétences si fournie
+  let skillsPath = null;
+  if (req.files?.skills?.[0]) {
+    const skillsFile = req.files.skills[0];
+    skillsPath = `${userId}/${newSessionId}/skills.${skillsFile.originalname.split('.').pop()}`;
+    await supabase.storage
+      .from('skills-sheets')
+      .upload(skillsPath, skillsFile.buffer, { contentType: skillsFile.mimetype });
+  }
+
+  const { error: insertError } = await supabase
+    .from('cv_sessions')
+    .insert({
+      id: newSessionId,
+      user_id: userId,
+      original_cv_path: newCvPath,
+      skills_sheet_path: skillsPath,
+      job_title: job_title || null,
+      status: 'uploaded',
+    });
+
+  if (insertError) return res.status(500).json({ error: insertError.message });
+
+  res.json({ session_id: newSessionId });
+});
+
 module.exports = router;

@@ -50,7 +50,6 @@ export default function SessionPage() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [downloadingId, setDownloadingId] = useState(null);
-  const [selectingId, setSelectingId] = useState(null);
 
   useEffect(() => {
     cvApi.getSession(sessionId)
@@ -58,17 +57,6 @@ export default function SessionPage() {
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [sessionId]);
-
-  const handleSelect = async (versionId) => {
-    setSelectingId(versionId);
-    try {
-      await cvApi.selectVersion(versionId);
-      setSession((prev) => ({
-        ...prev,
-        cv_versions: prev.cv_versions.map((v) => ({ ...v, is_selected: v.id === versionId })),
-      }));
-    } finally { setSelectingId(null); }
-  };
 
   const handleDownload = async (version) => {
     setDownloadingId(version.id);
@@ -123,11 +111,13 @@ if (loading) return (
             <div key={version.id} className={`cv-card${selected ? ' cv-card--selected' : ''}`}>
               <div className="cv-card__header">
                 <div>
-                  <span className={`badge ${info.cls}`}>{info.label}</span>
+                  {versions.length > 1 && (
+                    <span className={`badge ${info.cls}`}>{info.label}</span>
+                  )}
                   <div className="cv-card__title">{version.title}</div>
                   <div className="cv-card__angle">{version.angle}</div>
                 </div>
-                {selected && (
+                {selected && versions.length > 1 && (
                   <span className="badge badge--blue">
                     <Check size={10} /> Sélectionné
                   </span>
@@ -139,14 +129,6 @@ if (loading) return (
               <div className="cv-card__actions">
                 <button onClick={() => navigate(`/edit/${version.id}`)} className="btn btn--primary btn--sm" style={{ flex: 1 }}>
                   <Pencil size={12} /> Ouvrir &amp; modifier
-                </button>
-
-                <button
-                  onClick={() => handleSelect(version.id)}
-                  disabled={selectingId === version.id || selected}
-                  className={`btn btn--sm ${selected ? 'btn--outline' : 'btn--ghost'}`}
-                >
-                  <Check size={12} /> {selected ? 'Choisi' : 'Choisir'}
                 </button>
 
                 <button onClick={() => handleDownload(version)} disabled={downloadingId === version.id} className="btn btn--ghost btn--sm">

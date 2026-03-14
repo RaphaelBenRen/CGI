@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { cvApi } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
-import { FileText, Clock, CheckCircle, AlertCircle, ChevronRight, Plus, Upload } from 'lucide-react';
+import { FileText, Clock, CheckCircle, AlertCircle, ChevronRight, Plus, Upload, Trash2 } from 'lucide-react';
 
 const STATUS_MAP = {
   uploaded:   { label: 'En attente',  cls: 'badge--grey',   Icon: Clock },
@@ -21,6 +21,7 @@ function formatDate(d) {
 export default function DashboardPage() {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState(null);
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -34,6 +35,20 @@ export default function DashboardPage() {
   const handleClick = (session) => {
     if (session.status === 'completed') navigate(`/session/${session.id}`);
     else if (session.status === 'uploaded') navigate(`/generate/${session.id}`);
+  };
+
+  const handleDelete = async (e, sessionId) => {
+    e.stopPropagation();
+    if (!window.confirm('Supprimer cette session et tous ses CV ?')) return;
+    setDeletingId(sessionId);
+    try {
+      await cvApi.deleteSession(sessionId);
+      setSessions((prev) => prev.filter((s) => s.id !== sessionId));
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   return (
@@ -89,7 +104,18 @@ export default function DashboardPage() {
                     )}
                   </div>
                 </div>
-                <ChevronRight size={16} style={{ color: 'var(--c-text-3)', flexShrink: 0 }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                  <button
+                    onClick={(e) => handleDelete(e, session.id)}
+                    disabled={deletingId === session.id}
+                    className="btn btn--ghost btn--sm"
+                    style={{ padding: '4px 8px', color: 'var(--c-text-3)' }}
+                    title="Supprimer"
+                  >
+                    {deletingId === session.id ? <span className="spinner spinner--sm" /> : <Trash2 size={14} />}
+                  </button>
+                  <ChevronRight size={16} style={{ color: 'var(--c-text-3)' }} />
+                </div>
               </div>
             );
           })}

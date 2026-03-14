@@ -60,7 +60,7 @@ export default function GeneratePage() {
             <div className="generate-box__sub">
               {mode === 'job_target'
                 ? "L'IA optimise votre profil pour le poste cible et prépare 3 versions."
-                : "L'IA intègre vos nouvelles missions et prépare 3 versions mises à jour."}
+                : "L'IA intègre vos nouvelles missions et prépare votre CV mis à jour."}
             </div>
             <div className="steps">
               {steps.map((s, i) => {

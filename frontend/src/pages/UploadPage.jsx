@@ -1,7 +1,7 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { cvApi } from '../services/api';
-import { Upload, FileText, X, Briefcase, RefreshCw, Target, Check } from 'lucide-react';
+import { Upload, FileText, X, Briefcase, RefreshCw, Target, Check, History, Eye } from 'lucide-react';
 
 function DropZone({ label, hint, file, onChange, onClear, required }) {
   const inputRef = useRef();
@@ -70,22 +70,49 @@ export default function UploadPage() {
   const [jobTitle, setJobTitle] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [lastSession, setLastSession] = useState(null);
+  const [usingLastCV, setUsingLastCV] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    cvApi.getHistory().then((res) => {
+      const completed = res.data.find((s) => s.status === 'completed');
+      if (completed) setLastSession(completed);
+    }).catch(() => {});
+  }, []);
+
+  const handleReuse = () => {
+    setUsingLastCV(true);
+    setCvFile(null);
+  };
+
+  const handleViewLastCV = async () => {
+    try { await cvApi.viewOriginalCV(lastSession.id); } catch (e) { console.error(e); }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!cvFile) return setError('Veuillez sélectionner votre CV.');
+    if (!cvFile && !usingLastCV) return setError('Veuillez sélectionner votre CV.');
     if (mode === 'job_target' && !jobTitle.trim()) return setError('Veuillez renseigner le poste cible.');
     setError('');
     setLoading(true);
     try {
-      const formData = new FormData();
-      formData.append('cv', cvFile);
-      if (skillsFile) formData.append('skills', skillsFile);
-      if (jobTitle.trim()) formData.append('job_title', jobTitle.trim());
-      const res = await cvApi.upload(formData);
-      // Passer le mode via le state de navigation
-      navigate(`/generate/${res.data.session_id}`, { state: { mode } });
+      let sessionId;
+      if (usingLastCV) {
+        const formData = new FormData();
+        if (skillsFile) formData.append('skills', skillsFile);
+        if (jobTitle.trim()) formData.append('job_title', jobTitle.trim());
+        const res = await cvApi.reuseLastCV(lastSession.id, formData);
+        sessionId = res.data.session_id;
+      } else {
+        const formData = new FormData();
+        formData.append('cv', cvFile);
+        if (skillsFile) formData.append('skills', skillsFile);
+        if (jobTitle.trim()) formData.append('job_title', jobTitle.trim());
+        const res = await cvApi.upload(formData);
+        sessionId = res.data.session_id;
+      }
+      navigate(`/generate/${sessionId}`, { state: { mode } });
     } catch (err) {
       setError(err.response?.data?.error || "Erreur lors de l'upload. Réessayez.");
     } finally {
@@ -102,6 +129,19 @@ export default function UploadPage() {
         </div>
       </div>
 
+      {lastSession && !usingLastCV && (
+        <div className="alert" style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12, background: 'var(--c-surface-2)', border: '1px solid var(--c-border)', padding: '12px 16px' }}>
+          <History size={16} style={{ color: 'var(--c-primary)', flexShrink: 0 }} />
+          <span style={{ flex: 1, fontSize: 13 }}>
+            Vous avez déjà un CV — réutilisez-le directement sans re-uploader.
+          </span>
+          <button type="button" onClick={handleReuse} className="btn btn--outline btn--sm">
+            <RefreshCw size={13} />
+            Réutiliser mon CV
+          </button>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit}>
         {error && <div className="alert alert--error" style={{ marginBottom: 16 }}>{error}</div>}
 
@@ -112,14 +152,40 @@ export default function UploadPage() {
             Votre CV actuel
           </div>
           <div className="section-card__body">
-            <DropZone
-              label="CV"
-              hint="PDF ou Word (.docx) · Max 20 Mo"
-              file={cvFile}
-              onChange={setCvFile}
-              onClear={() => setCvFile(null)}
-              required
-            />
+            {usingLastCV ? (
+              <div className="file-preview">
+                <FileText size={18} className="file-preview__icon" />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="file-preview__name">
+                    cv-original.{lastSession.original_cv_path?.split('.').pop() || 'pdf'}
+                  </div>
+                  <div className="file-preview__size">
+                    Déposé le {new Date(lastSession.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleViewLastCV}
+                  className="btn btn--ghost btn--sm"
+                  style={{ padding: '4px 8px' }}
+                  title="Voir le fichier"
+                >
+                  <Eye size={14} />
+                </button>
+                <button className="file-preview__remove" onClick={() => setUsingLastCV(false)} type="button">
+                  <X size={15} />
+                </button>
+              </div>
+            ) : (
+              <DropZone
+                label="CV"
+                hint="PDF ou Word (.docx) · Max 20 Mo"
+                file={cvFile}
+                onChange={setCvFile}
+                onClear={() => setCvFile(null)}
+                required
+              />
+            )}
           </div>
         </div>
 
