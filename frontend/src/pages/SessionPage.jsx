@@ -99,11 +99,15 @@ if (loading) return (
           </button>
           <div style={{ flex: 1 }}>
             <div className="session-header__title">
-              {session.job_title ? `Propositions — "${session.job_title}"` : 'Propositions de CV'}
+              {versions.length === 1
+                ? 'CV mis à jour'
+                : session.job_title ? `Propositions — "${session.job_title}"` : 'Propositions de CV'}
             </div>
             <div className="session-header__sub">
               <Sparkles size={12} />
-              {versions.length} version{versions.length > 1 ? 's' : ''} générée{versions.length > 1 ? 's' : ''} — cliquez sur un CV pour l'ouvrir et le modifier
+              {versions.length === 1
+                ? 'Votre CV a été mis à jour avec les nouvelles missions et compétences — cliquez pour l\'ouvrir'
+                : `${versions.length} versions générées — cliquez sur un CV pour l'ouvrir et le modifier`}
             </div>
           </div>
 

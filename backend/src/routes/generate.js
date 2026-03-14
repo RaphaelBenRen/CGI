@@ -3,7 +3,7 @@ const router = express.Router();
 const { requireAuth } = require('../middleware/auth');
 const { supabase } = require('../services/supabase');
 const { parseFile } = require('../services/parser');
-const { extractCVData, generateCVVersions } = require('../services/openai');
+const { extractCVData, generateUpdatedCV, generateCVVersions } = require('../services/openai');
 
 // Lancer la génération des 3 versions de CV pour une session
 router.post('/:sessionId', requireAuth, async (req, res) => {
@@ -20,6 +20,11 @@ router.post('/:sessionId', requireAuth, async (req, res) => {
 
   if (sessionError || !session) {
     return res.status(404).json({ error: 'Session introuvable' });
+  }
+
+  // Bloquer si déjà en cours de traitement (double appel React StrictMode)
+  if (session.status === 'processing') {
+    return res.status(409).json({ error: 'Génération déjà en cours pour cette session' });
   }
 
   // Mettre à jour le statut
@@ -60,14 +65,21 @@ router.post('/:sessionId', requireAuth, async (req, res) => {
       }
     }
 
-    // Extraire les données structurées du CV avec GPT
-    const cvData = await extractCVData(cvText);
-
     // Mode : 'update' (mise à jour) | 'job_target' (optimisation pour un poste)
     const mode = req.body?.mode || 'update';
 
-    // Générer les 3 versions
-    const result = await generateCVVersions(cvData, skillsText, session.job_title, mode);
+    let result;
+
+    if (mode === 'update' && skillsText) {
+      // Envoi des deux textes bruts directement à GPT — pas de comparaison JSON
+      const cvRawText = cvText.content || String(cvText);
+      const skillsRawText = skillsText.content || String(skillsText);
+      result = await generateUpdatedCV(cvRawText, skillsRawText);
+    } else {
+      // job_target ou update sans fiche : extraction JSON puis génération
+      const cvData = await extractCVData(cvText);
+      result = await generateCVVersions(cvData, skillsText ? (skillsText.content || String(skillsText)) : null, session.job_title, mode);
+    }
     const versions = result.versions || [];
 
     // Supprimer les anciennes versions si re-génération

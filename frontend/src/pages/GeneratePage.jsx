@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { cvApi } from '../services/api';
 import { Sparkles, AlertCircle, CheckCircle } from 'lucide-react';
@@ -12,6 +12,7 @@ export default function GeneratePage() {
   const [status, setStatus] = useState('idle');
   const [error, setError] = useState('');
   const [step, setStep] = useState(0);
+  const hasStarted = useRef(false);
 
   const steps = [
     'Lecture de votre CV…',
@@ -22,27 +23,29 @@ export default function GeneratePage() {
   ];
 
   useEffect(() => {
-    let interval;
-    startGeneration();
+    if (hasStarted.current) return;
+    hasStarted.current = true;
+
+    const intervalId = { current: null };
 
     async function startGeneration() {
       setStatus('generating');
-      interval = setInterval(() => {
+      intervalId.current = setInterval(() => {
         setStep((s) => (s < steps.length - 1 ? s + 1 : s));
       }, 3000);
       try {
         await cvApi.generate(sessionId, { mode });
-        clearInterval(interval);
+        clearInterval(intervalId.current);
         setStatus('done');
         setTimeout(() => navigate(`/session/${sessionId}`), 1000);
       } catch (err) {
-        clearInterval(interval);
+        clearInterval(intervalId.current);
         setError(err.response?.data?.error || 'Erreur lors de la génération.');
         setStatus('error');
       }
     }
 
-    return () => clearInterval(interval);
+    startGeneration();
   }, [sessionId]);
 
   return (
