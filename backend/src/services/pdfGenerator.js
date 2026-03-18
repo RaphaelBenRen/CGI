@@ -129,7 +129,7 @@ function buildCVHTML(cvData) {
 
     /* HEADER */
     .header {
-      background: linear-gradient(135deg, #003087 0%, #0050c8 100%);
+      background: linear-gradient(135deg, #CC0000 0%, #E30000 100%);
       color: white;
       padding: 14px 28px 10px;
       flex-shrink: 0;
@@ -146,7 +146,7 @@ function buildCVHTML(cvData) {
     }
     .header-title {
       font-size: 11px;
-      color: #a8c4ff;
+      color: #ffaaaa;
       margin-top: 2px;
     }
     .cgi-badge {
@@ -166,7 +166,7 @@ function buildCVHTML(cvData) {
     }
     .contact-item {
       font-size: 9px;
-      color: #c8daff;
+      color: #ffcccc;
     }
 
     /* BODY LAYOUT */
@@ -180,25 +180,25 @@ function buildCVHTML(cvData) {
 
     /* SIDEBAR */
     .sidebar {
-      background: #f0f4ff;
+      background: #fff0f0;
       padding: 14px 12px;
-      border-right: 2px solid #dde8ff;
+      border-right: 2px solid #ffdddd;
       align-self: stretch;
     }
     .sidebar-section { margin-bottom: 12px; }
     .sidebar-title {
       font-size: 7.5px;
       font-weight: 700;
-      color: #003087;
+      color: #CC0000;
       text-transform: uppercase;
       letter-spacing: 1.2px;
       margin-bottom: 6px;
       padding-bottom: 3px;
-      border-bottom: 1.5px solid #003087;
+      border-bottom: 1.5px solid #CC0000;
     }
     .skill-tag {
       display: inline-block;
-      background: #003087;
+      background: #CC0000;
       color: white;
       padding: 2px 6px;
       border-radius: 2px;
@@ -212,7 +212,7 @@ function buildCVHTML(cvData) {
     .edu-details { font-size: 7.5px; color: #777; font-style: italic; }
     .lang-item { display: flex; justify-content: space-between; margin-bottom: 3px; }
     .lang-name { font-weight: 600; font-size: 8.5px; }
-    .lang-level { font-size: 8px; color: #003087; }
+    .lang-level { font-size: 8px; color: #CC0000; }
     .cert-list { padding-left: 10px; }
     .cert-list li { font-size: 8px; margin-bottom: 2px; }
 
@@ -222,25 +222,25 @@ function buildCVHTML(cvData) {
     .section-title {
       font-size: 9px;
       font-weight: 700;
-      color: #003087;
+      color: #CC0000;
       text-transform: uppercase;
       letter-spacing: 0.8px;
       margin-bottom: 6px;
       padding-bottom: 3px;
-      border-bottom: 1.5px solid #003087;
+      border-bottom: 1.5px solid #CC0000;
     }
     .summary-text {
       font-size: 9px;
       color: #333;
       line-height: 1.5;
-      background: #f8f9ff;
+      background: #fff8f8;
       padding: 7px 10px;
-      border-left: 2.5px solid #003087;
+      border-left: 2.5px solid #CC0000;
     }
     .experience {
       margin-bottom: 8px;
       padding-bottom: 7px;
-      border-bottom: 1px solid #eef0f8;
+      border-bottom: 1px solid #f8eeee;
     }
     .experience:last-child { border-bottom: none; margin-bottom: 0; }
     .exp-header {
@@ -250,12 +250,12 @@ function buildCVHTML(cvData) {
       margin-bottom: 3px;
     }
     .exp-title { font-size: 9.5px; font-weight: 700; color: #1a1a2e; }
-    .exp-company { font-size: 8.5px; color: #003087; font-weight: 500; margin-top: 1px; }
+    .exp-company { font-size: 8.5px; color: #CC0000; font-weight: 500; margin-top: 1px; }
     .exp-period {
       font-size: 8px;
       color: #888;
       white-space: nowrap;
-      background: #e8eeff;
+      background: #ffe8e8;
       padding: 1px 6px;
       border-radius: 8px;
       font-weight: 500;
@@ -268,7 +268,7 @@ function buildCVHTML(cvData) {
 
     /* FOOTER */
     .footer {
-      background: #003087;
+      background: #CC0000;
       color: rgba(255,255,255,0.6);
       text-align: center;
       padding: 4px;
@@ -383,20 +383,20 @@ function buildSkillsSheetHTML(data) {
   const newMissions = data.nouvelles_missions_a_ajouter || [];
   const newCompetences = data.nouvelles_competences_a_ajouter || [];
 
-  const skillTag = (s) => `<span style="display:inline-block;background:#003087;color:#fff;padding:2px 8px;font-size:8px;margin:2px 2px 2px 0;font-weight:500">${escapeHtml(s)}</span>`;
+  const skillTag = (s) => `<span style="display:inline-block;background:#CC0000;color:#fff;padding:2px 8px;font-size:8px;margin:2px 2px 2px 0;font-weight:500">${escapeHtml(s)}</span>`;
   const emptyTag = (s) => `<span style="display:inline-block;background:#f0f2f5;color:#888;border:1px dashed #c0c8d8;padding:2px 8px;font-size:8px;margin:2px 2px 2px 0;font-style:italic">${escapeHtml(s)}</span>`;
 
-  const sectionTitle = (t, color = '#003087') =>
+  const sectionTitle = (t, color = '#CC0000') =>
     `<div style="font-size:8px;font-weight:700;color:${color};text-transform:uppercase;letter-spacing:1.2px;padding-bottom:3px;border-bottom:1.5px solid ${color};margin-bottom:8px">${t}</div>`;
 
   const missionsHTML = missions.map((m) => `
-    <div style="margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #eef0f8">
+    <div style="margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #f8eeee">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:3px">
         <div>
           <div style="font-size:9px;font-weight:700;color:#1a1a2e">${escapeHtml(m.poste)}</div>
-          <div style="font-size:8px;color:#003087;font-weight:500">${escapeHtml(m.entreprise)}</div>
+          <div style="font-size:8px;color:#CC0000;font-weight:500">${escapeHtml(m.entreprise)}</div>
         </div>
-        <span style="font-size:7.5px;color:#888;background:#e8eeff;padding:1px 6px;white-space:nowrap;margin-left:8px">${escapeHtml(m.periode)}</span>
+        <span style="font-size:7.5px;color:#888;background:#ffe8e8;padding:1px 6px;white-space:nowrap;margin-left:8px">${escapeHtml(m.periode)}</span>
       </div>
       <ul style="padding-left:12px;margin:0">
         ${(m.missions || []).map((ms) => `<li style="font-size:8px;color:#333;margin-bottom:1.5px;line-height:1.4">${escapeHtml(ms)}</li>`).join('')}
@@ -429,12 +429,12 @@ function buildSkillsSheetHTML(data) {
 <body>
 
 <!-- HEADER -->
-<div style="background:linear-gradient(135deg,#003087 0%,#0050c8 100%);color:#fff;padding:14px 28px 10px">
+<div style="background:linear-gradient(135deg,#CC0000 0%,#E30000 100%);color:#fff;padding:14px 28px 10px">
   <div style="display:flex;justify-content:space-between;align-items:flex-start">
     <div>
       <div style="font-size:18px;font-weight:700;letter-spacing:0.3px">${escapeHtml(p.full_name || 'Consultant')}</div>
-      ${p.title ? `<div style="font-size:10px;color:#a8c4ff;margin-top:2px">${escapeHtml(p.title)}</div>` : ''}
-      ${p.email ? `<div style="font-size:8.5px;color:#c8daff;margin-top:4px">✉ ${escapeHtml(p.email)}</div>` : ''}
+      ${p.title ? `<div style="font-size:10px;color:#ffaaaa;margin-top:2px">${escapeHtml(p.title)}</div>` : ''}
+      ${p.email ? `<div style="font-size:8.5px;color:#ffcccc;margin-top:4px">✉ ${escapeHtml(p.email)}</div>` : ''}
     </div>
     <div style="text-align:right">
       <div style="background:rgba(255,255,255,0.15);padding:4px 10px;border:1px solid rgba(255,255,255,0.3);font-size:10px;font-weight:700;letter-spacing:1px">CGI</div>
@@ -447,7 +447,7 @@ function buildSkillsSheetHTML(data) {
 <div style="display:grid;grid-template-columns:175px 1fr;grid-template-rows:1fr;min-height:0">
 
   <!-- SIDEBAR -->
-  <div style="background:#f0f4ff;padding:14px 12px;border-right:2px solid #dde8ff;align-self:stretch">
+  <div style="background:#fff0f0;padding:14px 12px;border-right:2px solid #ffdddd;align-self:stretch">
 
     ${competTech.length > 0 ? `
     <div style="margin-bottom:12px">
@@ -484,7 +484,7 @@ function buildSkillsSheetHTML(data) {
       ${langues.map((l) => `
         <div style="display:flex;justify-content:space-between;margin-bottom:3px">
           <span style="font-weight:600;font-size:8px">${escapeHtml(l.langue)}</span>
-          <span style="font-size:7.5px;color:#003087">${escapeHtml(l.niveau)}</span>
+          <span style="font-size:7.5px;color:#CC0000">${escapeHtml(l.niveau)}</span>
         </div>`).join('')}
     </div>` : ''}
 
@@ -517,7 +517,7 @@ function buildSkillsSheetHTML(data) {
 </div>
 
 <!-- FOOTER -->
-<div style="background:#003087;color:rgba(255,255,255,0.6);text-align:center;padding:4px;font-size:7px;letter-spacing:0.3px">
+<div style="background:#CC0000;color:rgba(255,255,255,0.6);text-align:center;padding:4px;font-size:7px;letter-spacing:0.3px">
   Document généré via la Plateforme CGI — Fiche de compétences confidentielle
 </div>
 
